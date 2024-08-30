@@ -1,0 +1,33 @@
+include:
+  - ./auth/docker-compose.yml
+
+services:
+  psql:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-auth}
+      POSTGRES_USER: ${DB_USERNAME:-melkey}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password1234}
+    ports:
+      - "5432:5432"
+    volumes:
+      - psql_volume:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    environment:
+      REDIS_PASSWORD: ""
+    networks:
+      - app-network
+
+volumes:
+  psql_volume:
+
+
+networks:
+  app-network:
+    driver: bridge

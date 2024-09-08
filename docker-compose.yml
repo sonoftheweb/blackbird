@@ -1,26 +1,42 @@
-include:
-  - ./auth/docker-compose.yml
+version: '3.8'
 
 services:
+  auth:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    ports:
+      - "8080:4000"
+    depends_on:
+      - psql
+    volumes:
+      - ./auth:/go/src/app
+    networks:
+      - app-network
+    environment:
+      PORT: ${PORT:-4000}
+      APP_ENV: ${APP_ENV}
+      DB_HOST: psql
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:4000/health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
   psql:
     image: postgres:latest
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-auth}
-      POSTGRES_USER: ${DB_USERNAME:-melkey}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password1234}
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:5432"
     volumes:
       - psql_volume:/var/lib/postgresql/data
-    networks:
-      - app-network
-
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    environment:
-      REDIS_PASSWORD: ""
     networks:
       - app-network
 
@@ -30,4 +46,3 @@ volumes:
 
 networks:
   app-network:
-    driver: bridge

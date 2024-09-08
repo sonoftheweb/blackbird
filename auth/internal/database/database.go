@@ -19,6 +19,26 @@ type Service interface {
 	// The keys and values in the map are service-specific.
 	Health() map[string]string
 
+	// Exec executes a SQL query with the provided arguments and returns the result.
+	// It is safe against SQL injection when used with parameter placeholders.
+	Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+
+	// BeginTx starts a new database transaction with the specified options.
+	// The transaction is bound to the context passed.
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
+
+	// QueryRow executes a query that is expected to return at most one row.
+	// The result is scanned into the provided destination variables.
+	QueryRow(ctx context.Context, query string, args ...interface{}) *sql.Row
+
+	// Query executes a query that returns multiple rows.
+	// It is safe against SQL injection when used with parameter placeholders.
+	Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+
+	// Prepare creates a prepared statement for repeated use.
+	// A prepared statement takes parameters and is safe against SQL injection.
+	Prepare(ctx context.Context, query string) (*sql.Stmt, error)
+
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
@@ -103,6 +123,36 @@ func (s *service) Health() map[string]string {
 	}
 
 	return stats
+}
+
+// Exec executes a SQL query with the given arguments within the provided context.
+// It returns the result of the execution, such as the number of affected rows.
+func (s *service) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return s.db.ExecContext(ctx, query, args...)
+}
+
+// BeginTx starts a new transaction with the given transaction options within the provided context.
+// It returns a transaction handle to be used for executing statements and committing or rolling back.
+func (s *service) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+	return s.db.BeginTx(ctx, opts)
+}
+
+// QueryRow executes a SQL query that is expected to return at most one row,
+// scanning the result into the provided destination variables.
+func (s *service) QueryRow(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return s.db.QueryRowContext(ctx, query, args...)
+}
+
+// Query executes a SQL query with the given arguments within the provided context.
+// It returns a result set containing multiple rows, which must be iterated over.
+func (s *service) Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return s.db.QueryContext(ctx, query, args...)
+}
+
+// Prepare creates a new prepared statement for the given query within the provided context.
+// Prepared statements can be reused and are safe against SQL injection.
+func (s *service) Prepare(ctx context.Context, query string) (*sql.Stmt, error) {
+	return s.db.PrepareContext(ctx, query)
 }
 
 // Close closes the database connection.

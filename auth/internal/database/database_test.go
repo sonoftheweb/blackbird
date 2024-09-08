@@ -2,7 +2,10 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -59,11 +62,19 @@ func TestMain(m *testing.M) {
 		log.Fatalf("could not start postgres container: %v", err)
 	}
 
-	m.Run()
+	// Run migrations
+	err = runMigrations()
+	if err != nil {
+		log.Fatalf("could not run migrations: %v", err)
+	}
+
+	code := m.Run()
 
 	if teardown != nil && teardown(context.Background()) != nil {
 		log.Fatalf("could not teardown postgres container: %v", err)
 	}
+
+	os.Exit(code)
 }
 
 func TestNew(t *testing.T) {
@@ -97,4 +108,30 @@ func TestClose(t *testing.T) {
 	if srv.Close() != nil {
 		t.Fatalf("expected Close() to return nil")
 	}
+}
+
+func runMigrations() error {
+	db, err := sql.Open("pgx", fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", username, password, host, port, database))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	migrationFiles := []string{
+		"auth/migrations/000001_create_users_table.up.sql",
+	}
+
+	for _, file := range migrationFiles {
+		content, err := os.ReadFile(file)
+		if err != nil {
+			return err
+		}
+
+		_, err = db.Exec(string(content))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

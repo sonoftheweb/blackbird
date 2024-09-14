@@ -1,0 +1,141 @@
+{
+  "$schema": "https://www.krakend.io/schema/v3.json",
+  "version": 3,
+  "name": "Blackbird Enterprise API",
+  "port": 8080,
+  "host": [
+    "http://bb-auth:8000"
+  ],
+  "timeout": "3000ms",
+  "cache_ttl": "300s",
+  "endpoints": [
+    {
+      "endpoint": "/",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": [
+            "http://bb-auth:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    }
+  ],
+  "sequential_start": true,
+  "async_agent": [
+    {
+      "name": "async-agent-demo",
+      "backend": [
+        {
+          "host": [
+            "http://127.0.0.1:8080"
+          ],
+          "url_pattern": "/__debug/async-agent-demo",
+          "method": "POST"
+        }
+      ],
+      "consumer": {
+        "topic": "*.bar",
+        "workers": 20
+      },
+      "connection": {
+        "max_retries": 10,
+        "backoff_strategy": "exponential-jitter"
+      },
+      "extra_config": {
+        "async/amqp": {
+          "name": "krakend",
+          "host": "amqp://guest:guest@rabbitmq:5672/",
+          "exchange": "foo",
+          "prefetch_count": 40,
+          "auto_ack": true
+        }
+      }
+    }
+  ],
+  "extra_config": {
+    "telemetry/metrics": {
+      "collection_time": "30s",
+      "listen_address": ":8090"
+    },
+    "telemetry/influx": {
+      "address": "http://influxdb:8086",
+      "ttl": "25s",
+      "buffer_size": 100,
+      "username": "krakend-dev",
+      "password": "pas5w0rd"
+    },
+    "telemetry/logging": {
+      "level": "CRITICAL",
+      "prefix": "[KRAKEND]",
+      "syslog": false,
+      "stdout": true,
+      "format": "logstash"
+    },
+    "telemetry/gelf": {
+      "address": "logstash:12201",
+      "enable_tcp": false
+    },
+    "telemetry/opencensus": {
+      "sample_rate": 100,
+      "reporting_period": 1,
+      "enabled_layers": {
+        "backend": true,
+        "router": true
+      },
+      "exporters": {
+        "jaeger": {
+          "endpoint": "http://jaeger:14268/api/traces",
+          "service_name": "krakend"
+        }
+      }
+    },
+    "security/cors": {
+      "allow_origins": [
+        "*"
+      ],
+      "allow_methods": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "DELETE",
+        "CONNECT",
+        "OPTIONS",
+        "TRACE",
+        "PATCH"
+      ],
+      "allow_headers": [
+        "Origin",
+        "Authorization",
+        "Content-Type"
+      ],
+      "expose_headers": [
+        "Content-Length"
+      ],
+      "max_age": "12h"
+    },
+    "auth/revoker": {
+      "N": 10000000,
+      "P": 1e-7,
+      "hash_name": "optimal",
+      "TTL": 1500,
+      "port": 1234,
+      "token_keys": [
+        "jti"
+      ]
+    },
+    "telemetry/logstash": {
+      "enabled": false
+    }
+  },
+  "output_encoding": "json",
+  "debug_endpoint": true,
+  "echo_endpoint": true
+}

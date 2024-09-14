@@ -1,0 +1,2 @@
+docker compose -p docker-apisix up
+docker compose -p docker-apisix down -v

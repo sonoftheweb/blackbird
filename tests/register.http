@@ -1,0 +1,21 @@
+### POST register
+POST http://localhost:8080/v1/register
+Content-Type: application/json
+
+{
+  "name": "Jacob Ekanem",
+  "email": "prometheus6001@gmail.com",
+  "password": "sonoftheweb123"
+}
+###
+
+### POST direct register
+POST http://localhost:8000/register
+Content-Type: application/json
+
+{
+  "name": "Jacob Ekanem",
+  "email": "prometheus6001@gmail.com",
+  "password": "sonoftheweb123"
+}
+###

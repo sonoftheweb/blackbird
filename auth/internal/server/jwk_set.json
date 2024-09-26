@@ -1,0 +1,10 @@
+{
+  "keys": [
+    {
+      "kty": "oct",
+      "alg": "HS256",
+      "k": "ZTcyZGIzYzQ4ODFjNmEzYWI1OTFkZDlkMjZjNTcxNGU2OGY4OTc4ZDk3MDE3MzQwMzhmOTcwMGMyNDljODliYmYzNWE2ZDlhOTUyYTMxMjgxODAwMWZmYWY5MzlhODVjMGQ5OWY5NmQ0ZTI4MzhiODYxZjZjMTBjZGM4NGNkZjQ=",
+      "kid": "sm1"
+    }
+  ]
+}

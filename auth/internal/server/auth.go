@@ -1,12 +1,14 @@
 package server
 
 import (
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-var jwtKey = []byte("your_secret_key")
+var jwtKey = []byte(os.Getenv("JWT_SECRET"))
+var jwtKid = []byte(os.Getenv("JWT_KID"))
 
 func generateJWT(email string) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
@@ -16,6 +18,9 @@ func generateJWT(email string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token.Header["kid"] = jwtKid
+	token.Header["alg"] = jwt.SigningMethodHS256.Alg()
+
 	return token.SignedString(jwtKey)
 }
 

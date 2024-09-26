@@ -13,10 +13,11 @@ services:
       - "8090:8090"
     command: [ "run", "-d", "-c", "/etc/krakend/krakend.json" ]
     depends_on:
-      - bb-auth
+      - auth
       - jaeger
     networks:
       api:
+
 
   grafana:
     image: grafana/grafana:9.1.2
@@ -28,6 +29,7 @@ services:
       - "./gateway/config/grafana/krakend:/var/lib/grafana/dashboards/krakend"
     networks:
       api:
+
 
   influxdb:
     image: influxdb:1.8.10
@@ -42,6 +44,7 @@ services:
     networks:
       api:
 
+
   jaeger:
     image: jaegertracing/all-in-one:1
     ports:
@@ -49,6 +52,7 @@ services:
       - "14268:14268"
     networks:
       api:
+
 
   elasticsearch:
     image: elasticsearch:8.4.1
@@ -64,12 +68,14 @@ services:
     networks:
       api:
 
+
   kibana:
     image: kibana:8.4.1
     ports:
       - "5601:5601"
     networks:
       api:
+
 
   logstash:
     image: logstash:8.4.1
@@ -84,12 +90,14 @@ services:
     networks:
       api:
 
+
   rabbitmq:
     image: rabbitmq:3-management
     ports:
       - "15672:15672"
     networks:
       api:
+
 
   jwt_revoke:
     build:
@@ -102,8 +110,9 @@ services:
     networks:
       api:
 
+
   auth:
-    container_name: bb-auth
+    container_name: bb_auth
     build:
       context: ./auth
       dockerfile: Dockerfile
@@ -124,6 +133,8 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_SCHEMA: ${DB_SCHEMA}
+      JWT_SECRET: ${JWT_SECRET:-e72db3c4881c6a3ab591dd9d26c5714e68f8978d9701734038f9700c249c89bbf35a6d9a952a312818001ffaf939a85c0d99f96d4e2838b861f6c10cdc84cdf4}
+      JWT_KID: ${JWT_KID:-sm1}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 10s
@@ -143,8 +154,10 @@ services:
     networks:
       api:
 
+
 volumes:
   psql_volume:
+
 
 networks:
   api:

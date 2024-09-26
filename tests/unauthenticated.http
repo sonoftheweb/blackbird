@@ -1,0 +1,3 @@
+### GET request to un-authenticated auth route
+GET http://localhost:8080
+###

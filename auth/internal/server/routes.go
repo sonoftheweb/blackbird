@@ -11,10 +11,13 @@ import (
 func (s *Server) RegisterRoutes() http.Handler {
 
 	mux := http.NewServeMux()
-	mux.Handle("/", s.jwtMiddleware(http.HandlerFunc(s.HelloWorldHandler)))
+	mux.HandleFunc("/", s.HelloWorldHandler)
+	mux.Handle("/admin", s.jwtMiddleware(http.HandlerFunc(s.HelloWorldHandler)))
 
 	mux.HandleFunc("/register", s.registerHandler)
 	mux.HandleFunc("/login", s.loginHandler)
+
+	mux.HandleFunc("/.well-known/jwks.json", s.jwkHandler)
 
 	mux.HandleFunc("/health", s.healthHandler)
 
@@ -46,6 +49,7 @@ func (s *Server) registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]bool{"status": true})
 }
 
 func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -100,4 +104,8 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, _ = w.Write(jsonResp)
+}
+
+func (s *Server) jwkHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "internal/server/jwk_set.json")
 }

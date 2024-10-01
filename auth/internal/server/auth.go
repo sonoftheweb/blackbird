@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -10,18 +11,53 @@ import (
 var jwtKey = []byte(os.Getenv("JWT_SECRET"))
 var jwtKid = []byte(os.Getenv("JWT_KID"))
 
-func generateJWT(email string) (string, error) {
-	expirationTime := time.Now().Add(24 * time.Hour)
-	claims := &jwt.StandardClaims{
+func generateJWT(userID int, email string) (map[string]interface{}, error) {
+	expirationTime := time.Now().Add(24 * time.Hour).Unix()
+	jti := fmt.Sprintf("%d", userID)
+
+	accessTokenClaims := &jwt.StandardClaims{
+		Audience:  "http://localhost:8080",
+		Issuer:    "https://krakend.io",
 		Subject:   email,
-		ExpiresAt: expirationTime.Unix(),
+		Id:        jti,
+		ExpiresAt: expirationTime,
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token.Header["kid"] = jwtKid
-	token.Header["alg"] = jwt.SigningMethodHS256.Alg()
+	refreshTokenClaims := &jwt.StandardClaims{
+		Audience:  "http://localhost:8080",
+		Issuer:    "https://krakend.io",
+		Subject:   email,
+		Id:        jti + "_refresh", // Slightly different JTI for refresh token
+		ExpiresAt: expirationTime,
+	}
 
-	return token.SignedString(jwtKey)
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims)
+	accessToken.Header["kid"] = jwtKid
+	accessToken.Header["alg"] = jwt.SigningMethodHS256.Alg()
+
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)
+	refreshToken.Header["kid"] = jwtKid
+	refreshToken.Header["alg"] = jwt.SigningMethodHS256.Alg()
+
+	responsePayload := map[string]interface{}{
+		"access_token": map[string]interface{}{
+			"aud": accessTokenClaims.Audience,
+			"iss": accessTokenClaims.Issuer,
+			"sub": accessTokenClaims.Subject,
+			"jti": accessTokenClaims.Id,
+			"exp": accessTokenClaims.ExpiresAt,
+		},
+		"refresh_token": map[string]interface{}{
+			"aud": refreshTokenClaims.Audience,
+			"iss": refreshTokenClaims.Issuer,
+			"sub": refreshTokenClaims.Subject,
+			"jti": refreshTokenClaims.Id,
+			"exp": refreshTokenClaims.ExpiresAt,
+		},
+		"exp": expirationTime,
+	}
+
+	return responsePayload, nil
 }
 
 func validateJWT(tokenStr string) (*jwt.StandardClaims, error) {

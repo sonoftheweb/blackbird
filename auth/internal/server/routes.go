@@ -49,7 +49,11 @@ func (s *Server) registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]bool{"status": true})
+	err = json.NewEncoder(w).Encode(map[string]bool{"status": true})
+	if err != nil {
+		http.Error(w, "Error encoding token", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +68,8 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var storedPassword string
 	ctx := r.Context()
-	err := s.db.QueryRow(ctx, "SELECT password FROM users WHERE email = $1", creds.Email).Scan(&storedPassword)
+	var userID int
+	err := s.db.QueryRow(ctx, "SELECT id, password FROM users WHERE email = $1", creds.Email).Scan(&userID, &storedPassword)
 	if err != nil {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
@@ -75,13 +80,23 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := generateJWT(creds.Email)
+	token, err := generateJWT(userID, creds.Email)
 	if err != nil {
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	w.Header().Set("Content-Type", "application/json")
+	tokenJSON, err := json.Marshal(token)
+	if err != nil {
+		http.Error(w, "Error marshaling token", http.StatusInternalServerError)
+		return
+	}
+	_, err = w.Write(tokenJSON)
+	if err != nil {
+		http.Error(w, "Error writing token", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {

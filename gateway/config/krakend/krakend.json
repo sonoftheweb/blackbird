@@ -10,32 +10,6 @@
   "cache_ttl": "300s",
   "endpoints": [
     {
-      "endpoint": "/v1/protected",
-      "method": "GET",
-      "output_encoding": "json",
-      "backend": [
-        {
-          "url_pattern": "/",
-          "encoding": "json",
-          "sd": "static",
-          "method": "GET",
-          "host": [
-            "http://bb_auth:8000"
-          ],
-          "disable_host_sanitize": false
-        }
-      ],
-      "extra_config": {
-        "auth/validator": {
-          "alg": "HS256",
-          "jwk_url": "http://localhost:8000/.well-known/jwks.json",
-          "disable_jwk_security": true,
-          "cache": false,
-          "operation_debug": true
-        }
-      }
-    },
-    {
       "endpoint": "/v1/login",
       "method": "POST",
       "output_encoding": "json",
@@ -50,7 +24,19 @@
           ],
           "disable_host_sanitize": false
         }
-      ]
+      ],
+      "extra_config": {
+        "auth/signer": {
+          "alg": "HS256",
+          "jwk_url": "http://localhost:8000/.well-known/jwks.json",
+          "keys_to_sign": [
+            "access_token",
+            "refresh_token"
+          ],
+          "kid": "sm1",
+          "disable_jwk_security": true
+        }
+      }
     },
     {
       "endpoint": "/v1/register",
